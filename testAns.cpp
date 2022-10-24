@@ -8,36 +8,30 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <pthread.h>
 
 using namespace std;
 
 const int optval = 1;
 
 char message[256] = "";
+char answer [256];
+int ansLen;
 int msgLen;
 int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 struct sockaddr_in local;
 struct ip_mreq group;
 
-int main(){
-    /*char addrMulti[20] = "";
-    int multiPort;
-    char addrUni[20] = "";
-    int uniPort;
+int main(int argc, char *argv[]){
+   if (argc != 3) {
+       cout << "You should input multicast address and port\n" << endl;
+       return 1;
+    }
 
-    cout << "Input pair of multicast address and UDP port: " << endl;
-    cin >> addrMulti >> multiPort;
-
-    cout << "Input pair of unicast address and UDP port: " << endl;
-    cin >> addrUni >> uniPort;
-
-    cout << "Multicast address: " << addrMulti << endl;
-    cout << "UDP Port: " << multiPort << endl;
-    cout << "Unicast address: " << addrUni << endl;
-    cout << "UDP Port: " << uniPort << endl;*/
+    char* adr = argv[1]; 
+    int port = atoi(argv[2]);
     
-    if (sockfd < 0)
-    {
+    if (sockfd < 0) {
         perror("socket");
         return -1;
     }
@@ -49,19 +43,15 @@ int main(){
   
     bzero(&local, sizeof(local));
     local.sin_family = AF_INET;
-    local.sin_port = htons(3245);
-    local.sin_addr.s_addr = INADDR_ANY;
+    local.sin_port = htons(port);
+    local.sin_addr.s_addr = inet_addr(adr);
 
     bind(sockfd,(sockaddr *)&local, sizeof(local));
 
-    //struct ip_mreq localInterface;
-    //localInterface.imr_interface.s_addr = INADDR_ANY; 
-    //localInterface.imr_multiaddr.s_addr = inet_addr("237.7.7.7");
-    group.imr_multiaddr.s_addr = inet_addr("226.1.1.1");
+    group.imr_multiaddr.s_addr = inet_addr(adr);
     group.imr_interface.s_addr = inet_addr("127.0.0.1");
 
-    if ((setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &group, sizeof(group))) != 0)
-    {
+    if ((setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &group, sizeof(group))) != 0) {
        perror("multicast");
        return -2;
     }
@@ -69,7 +59,7 @@ int main(){
 
     msgLen = sizeof(message);
 
-    if(read(sockfd, message, msgLen) < 0){
+    if(read(sockfd, message, msgLen) < 0) {
         perror("Reading message error");
         close(sockfd);
         return 0;
@@ -78,6 +68,18 @@ int main(){
         cout << "Reading message...OK.\n" << endl;
         cout << "The message from multicast server is: \n" << message << endl;
     }
+
+    cout << "Input message to send multicast:" << endl;
+    cin >> answer;
+    ansLen = sizeof(answer);
+    cout << answer << endl;
+
+    if(sendto(sockfd, answer, ansLen, 0, (struct sockaddr*)&local, sizeof(local)) < 0) {
+        perror("Sending message error");
+    }
+    else 
+        cout << "Sending message ....OK\n" << endl;
+
 
     close(sockfd);
     return 0;

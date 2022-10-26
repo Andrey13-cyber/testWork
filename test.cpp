@@ -14,17 +14,17 @@ using namespace std;
 
 const int optval = 1;
 
-char message[256] = "It's a test";
+char message[256];
 int msgLen = sizeof(message);
-char ans[256] = "";
-int ansLen;
+char ans[256];
+int ansLen = 256;
 int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 struct sockaddr_in group;
 struct in_addr localInterface;
 
 int main(int argc, char *argv[]) { 
-
-    pthread_t tid;
+    /*pthread_t multicast;
+    pthread_create(&multicast, NULL, &multicast_routine, NULL);*/
     
     if (argc != 3) {
        cout << "You should input multicast address and port\n" << endl;
@@ -40,10 +40,8 @@ int main(int argc, char *argv[]) {
     }
     cout << "Socket is create." << endl;
 
-   
+    
     setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-
-  
     bzero(&group, sizeof(group));
     group.sin_family = AF_INET;
     group.sin_port = htons(port);
@@ -58,32 +56,42 @@ int main(int argc, char *argv[]) {
     }
     cout << "Joined to multicast group." << endl;
 
+    cout << "Input message: " << endl;
+    cin >> message;
     if(sendto(sockfd, message, msgLen, 0, (struct sockaddr*)&group, sizeof(group)) < 0) {
         perror("Sending message error");
     }
     else 
-        cout << "Sending message ....OK\n" << endl;
+        cout << "Sending message...\n" << endl;
+    
     sleep(5);
-
-  
-    if(read(sockfd, ans, ansLen) < 0) {
+    socklen_t flag;
+    if(recvfrom(sockfd, message, msgLen, 0, (struct sockaddr*)&localInterface, &flag) < 0) {
         perror("Reading message error");
         close(sockfd);
         return 0;
     }
-
-    if (recvfrom(sockfd, &ans, sizeof(ans)-1, 0, NULL, NULL) < 0) {
-    perror("recvfrom");
-    exit(EXIT_FAILURE);
-    }
-
     cout << "Message from unicast: " << message << endl;
 
+
+    //cout << "I got message:" << ans << endl;
+    //ansLen = sizeof(ans);
+   /*  sleep(10);
+    while(1)
+    {
+        if (recvfrom(sockfd, &ans, sizeof(ans), 0, NULL, NULL) < 0) {
+            perror("recvfrom");
+            exit(EXIT_FAILURE);
+        }
+
+        cout << "Message from unicast: " << ans << endl;
+    } */
     //else {
-      //  cout << "Reading message...OK.\n" << endl;
+      //  cout << "Reading message...\n" << endl;
         //cout << "The message from unitcast is: \n" << answer << endl;
     //}
 
     close(sockfd);
     return 0;
 };
+

@@ -15,14 +15,15 @@ using namespace std;
 const int optval = 1;
 
 char message[256] = "";
-char answer [256];
-int ansLen;
-int msgLen;
+//char ans[256];
+//int ansLen;
+int msgLen = 256;
 int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 struct sockaddr_in local;
 struct ip_mreq group;
 
 int main(int argc, char *argv[]){
+    
    if (argc != 3) {
        cout << "You should input multicast address and port\n" << endl;
        return 1;
@@ -39,8 +40,6 @@ int main(int argc, char *argv[]){
 
    
     setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-
-  
     bzero(&local, sizeof(local));
     local.sin_family = AF_INET;
     local.sin_port = htons(port);
@@ -57,30 +56,36 @@ int main(int argc, char *argv[]){
     }
     cout << "Joined to multicast group." << endl;
 
-    msgLen = sizeof(message);
+    /* //msgLen = sizeof(message);
 
-    if(read(sockfd, message, msgLen) < 0) {
+    //проверка предположения
+    if ((setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &group, sizeof(group))) != 0) {
+       perror("multicast");
+       return -2;
+    } */
+
+    
+    socklen_t flag;
+    if(recvfrom(sockfd, message, msgLen, 0, (struct sockaddr*)&local, &flag) < 0) {
         perror("Reading message error");
         close(sockfd);
         return 0;
     }
     else {
-        cout << "Reading message...OK.\n" << endl;
+        cout << "Reading message...\n" << endl;
         cout << "The message from multicast server is: \n" << message << endl;
     }
 
-    cout << "Input message to send multicast:" << endl;
-    cin >> answer;
-    ansLen = sizeof(answer);
-    cout << answer << endl;
+    //cout << "Input message to send multicast:" << endl;
+    //cin >> ans;
 
-    if(sendto(sockfd, answer, ansLen, 0, (struct sockaddr*)&local, sizeof(local)) < 0) {
+    if(sendto(sockfd, message, msgLen, 0, (struct sockaddr*)&local, sizeof(local)) < 0) {
         perror("Sending message error");
     }
     else 
-        cout << "Sending message ....OK\n" << endl;
+        cout << "Sending message...\n" << endl; 
 
-
+    sleep(10);
     close(sockfd);
     return 0;
 };
